@@ -1,9 +1,14 @@
 from uagents import Agent, Context, Model, Bureau
 import openai
 from openai import OpenAI
+import os
+from dotenv import load_dotenv
 
-# Set your OpenAI API key
-openai_api_key = "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"
+# load the .env file
+load_dotenv()
+
+# set OpenAI API key
+openai_api_key = os.getenv('OPENAI_API_KEY')
 client = OpenAI(api_key=openai_api_key)
 
 class Message(Model):
