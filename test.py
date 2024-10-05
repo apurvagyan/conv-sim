@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import socket
 import time
 import threading
+import asyncio
 
 # Load the .env file
 load_dotenv()
@@ -36,6 +37,9 @@ agent1_prompt = ""
 agent2_prompt = ""
 conversation_topic = ""
 conversation_log = []
+
+# Global event to signal conversation end
+conversation_ended = threading.Event()
 
 def generate_personality_system_prompts(character1, character2):
     prompt1 = f"{BASE_PROMPT} {character1}"
@@ -98,6 +102,7 @@ async def agent1_respond(ctx: Context, sender: str, msg: Message):
     global exchange_count, conversation_log
     if exchange_count >= max_exchanges:
         print("Conversation has ended.")
+        conversation_ended.set()  # Set the event
         return
 
     response = generate_response(agent1_prompt, f"{msg.content}\nRespond: {conversation_topic}")
@@ -112,6 +117,7 @@ async def agent2_respond(ctx: Context, sender: str, msg: Message):
     global exchange_count, conversation_log
     if exchange_count >= max_exchanges:
         print("Conversation has ended.")
+        conversation_ended.set()  # Set the event
         return
 
     response = generate_response(agent2_prompt, f"{msg.content}\nRespond: {conversation_topic}")
@@ -155,8 +161,23 @@ def analyze_conversation():
 
     return analysis
 
+# Function to run the bureau
 def run_bureau(bureau):
-    bureau.run()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(bureau.run())
+
+# Function to monitor conversation and stop bureau
+def monitor_conversation(bureau_thread):
+    conversation_ended.wait()  # Wait for the conversation to end
+    print("\nStopping the bureau...")
+    # Forcefully stop the bureau thread
+    bureau_thread.join(timeout=1)
+    if bureau_thread.is_alive():
+        # If thread is still alive, we need to forcefully terminate it
+        # This is not ideal, but necessary given the constraints
+        import _thread
+        _thread.interrupt_main()
 
 if __name__ == "__main__":
     # Ask user for character descriptions
@@ -175,14 +196,23 @@ if __name__ == "__main__":
     
     print("\nStarting conversation...")
     
-    # Create and run the bureau
+    # Create the bureau
     bureau_port = find_free_port()
     bureau = Bureau(port=bureau_port, endpoint=f"http://127.0.0.1:{bureau_port}/submit")
     bureau.add(agent1)
     bureau.add(agent2)
     
+    # Start the bureau in a separate thread
+    bureau_thread = threading.Thread(target=run_bureau, args=(bureau,))
+    bureau_thread.start()
+
+    # Start monitoring thread
+    monitor_thread = threading.Thread(target=monitor_conversation, args=(bureau_thread,))
+    monitor_thread.start()
+
     try:
-        bureau.run()
+        # Wait for the monitoring thread to finish
+        monitor_thread.join()
     except KeyboardInterrupt:
         print("\nConversation interrupted by user.")
     finally:
@@ -191,3 +221,4 @@ if __name__ == "__main__":
         analysis = analyze_conversation()
         print("\nConversation Analysis:")
         print(analysis)
+        
