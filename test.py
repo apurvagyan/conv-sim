@@ -2,6 +2,9 @@ from uagents import Agent, Context, Model, Bureau
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
+import socket
+import time
+import threading
 
 # Load the .env file
 load_dotenv()
@@ -32,6 +35,7 @@ exchange_count = 0
 agent1_prompt = ""
 agent2_prompt = ""
 conversation_topic = ""
+conversation_log = []
 
 def generate_personality_system_prompts(character1, character2):
     prompt1 = f"{BASE_PROMPT} {character1}"
@@ -65,54 +69,94 @@ def generate_response(prompt, message):
     
     return response.choices[0].message.content
 
+def find_free_port(start_port=8080, max_port=9000):
+    for port in range(start_port, max_port):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(('', port))
+                return port
+            except OSError:
+                continue
+    raise IOError("No free ports")
+
 # Create agents
 agent1 = Agent(
     name="agent1",
-    port=8000,
+    port=find_free_port(8000),
     seed="agent1_secret_phrase",
 )
 
 agent2 = Agent(
     name="agent2",
-    port=8001,
+    port=find_free_port(8001),
     seed="agent2_secret_phrase",
 )
 
 # Agent1 behavior
 @agent1.on_message(model=Message)
 async def agent1_respond(ctx: Context, sender: str, msg: Message):
-    global exchange_count
+    global exchange_count, conversation_log
     if exchange_count >= max_exchanges:
         print("Conversation has ended.")
         return
 
     response = generate_response(agent1_prompt, f"{msg.content}\nRespond: {conversation_topic}")
     print(f"Agent 1: {response}")
+    conversation_log.append(f"Agent 1: {response}")
     exchange_count += 1
     await ctx.send(agent2.address, Message(content=response))
 
 # Agent2 behavior
 @agent2.on_message(model=Message)
 async def agent2_respond(ctx: Context, sender: str, msg: Message):
-    global exchange_count
+    global exchange_count, conversation_log
     if exchange_count >= max_exchanges:
         print("Conversation has ended.")
         return
 
     response = generate_response(agent2_prompt, f"{msg.content}\nRespond: {conversation_topic}")
     print(f"Agent 2: {response}")
+    conversation_log.append(f"Agent 2: {response}")
     exchange_count += 1
     await ctx.send(agent1.address, Message(content=response))
 
 # Function to initiate the conversation
 @agent1.on_interval(period=5.0)
 async def start_conversation(ctx: Context):
-    global exchange_count
+    global exchange_count, conversation_log
     if exchange_count == 0:
         initial_message = f"What are your thoughts on {conversation_topic}?"
         print(f"\nInitial question: {initial_message}")
+        conversation_log.append(f"Initial question: {initial_message}")
         exchange_count += 1
         await ctx.send(agent2.address, Message(content=initial_message))
+
+# Function to analyze the conversation
+def analyze_conversation():
+    conversation_text = "\n".join(conversation_log)
+    analysis_prompt = f"""Analyze the following conversation and provide:
+    1. Key takeaways
+    2. Major points discussed
+    3. General productivity assessment
+    4. Any interesting insights or observations
+
+    Please be succinct but clear, providing a high-impact analysis.
+
+    Conversation:
+    {conversation_text}
+    """
+
+    analysis = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "system", "content": "You are an expert conversation analyst."},
+                  {"role": "user", "content": analysis_prompt}],
+        max_tokens=300
+    ).choices[0].message.content
+
+    return analysis
+
+def run_bureau(bureau):
+    bureau.run()
 
 if __name__ == "__main__":
     # Ask user for character descriptions
@@ -120,7 +164,6 @@ if __name__ == "__main__":
     character2 = input("Enter a brief description for the second character (e.g., 'A 60-year-old oil company executive from Texas'): ")
     
     # Generate personalized system prompts
-    # global agent1_prompt, agent2_prompt
     agent1_prompt, agent2_prompt = generate_personality_system_prompts(character1, character2)
     
     print("\nGenerated Character Profiles:")
@@ -133,7 +176,18 @@ if __name__ == "__main__":
     print("\nStarting conversation...")
     
     # Create and run the bureau
-    bureau = Bureau(port=8080, endpoint="http://127.0.0.1:8080/submit")
+    bureau_port = find_free_port()
+    bureau = Bureau(port=bureau_port, endpoint=f"http://127.0.0.1:{bureau_port}/submit")
     bureau.add(agent1)
     bureau.add(agent2)
-    bureau.run()
+    
+    try:
+        bureau.run()
+    except KeyboardInterrupt:
+        print("\nConversation interrupted by user.")
+    finally:
+        # After the conversation ends, analyze it
+        print("\nAnalyzing the conversation...")
+        analysis = analyze_conversation()
+        print("\nConversation Analysis:")
+        print(analysis)
