@@ -1,0 +1,27 @@
+Metadata-Version: 2.1
+Name: dialogues
+Version: 0.0.3
+Summary: This package provides a unified interface to several dialogue benchmarks
+Home-page: https://github.com/Mehrad0711/dialogues
+Author: Mehrad Moradshahi
+Author-email: mehrad@cs.stanford.edu
+License: BSD-3-Clause
+Platform: UNKNOWN
+Description-Content-Type: text/markdown
+Requires-Dist: pydot (==1.4.2)
+Requires-Dist: pymongo (==3.11.2)
+Requires-Dist: dnspython (==2.1.0)
+Requires-Dist: word2number (==1.1)
+Requires-Dist: dictdiffer (~=0.9)
+Requires-Dist: networkx (==2.5)
+Requires-Dist: sacrebleu (<3,>=1)
+Requires-Dist: datasets (~=2.1)
+
+# Dialogues
+This codebase provides a unified interface to several dialogue datasets.
+
+# Available datasets:
+- BiToD
+- RiSAWOZ
+
+

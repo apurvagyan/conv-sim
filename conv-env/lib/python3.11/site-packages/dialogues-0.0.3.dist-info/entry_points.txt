@@ -1,0 +1,3 @@
+[console_scripts]
+dialogues = dialogues.__main__:main
+
