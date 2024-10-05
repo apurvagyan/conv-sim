@@ -1,33 +1,33 @@
-import { useState } from 'react'
+import React, { useState } from 'react';
 
 const PromptBox = ({ onSubmit }) => {
-  const [prompt, setPrompt] = useState('')
+  const [prompt, setPrompt] = useState('');
 
   const handleSubmit = (e) => {
-    e.preventDefault()
-    onSubmit({ prompt })
-    setPrompt('')
-  }
+    e.preventDefault();
+    if (prompt.trim()) {
+      onSubmit(prompt);
+      setPrompt(''); // Clear the input field after submission
+    }
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-md">
-      <div className="flex items-center border-b border-purple-500 py-2">
-        <input
-          className="appearance-none bg-transparent border-none w-full text-white mr-3 py-1 px-2 leading-tight focus:outline-none"
-          type="text"
-          placeholder="Enter your prompt"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-        />
-        <button
-          className="flex-shrink-0 bg-purple-500 hover:bg-purple-700 border-purple-500 hover:border-purple-700 text-sm border-4 text-white py-1 px-2 rounded"
-          type="submit"
-        >
-          Submit
-        </button>
-      </div>
+    <form onSubmit={handleSubmit} className="mb-4">
+      <input
+        type="text"
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        className="w-full p-2 rounded border border-gray-300 bg-gray-100 text-gray-900"
+        placeholder="Enter your prompt"
+      />
+      <button
+        type="submit"
+        className="mt-2 w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+      >
+        Submit
+      </button>
     </form>
-  )
-}
+  );
+};
 
-export default PromptBox
+export default PromptBox;
