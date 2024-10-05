@@ -53,9 +53,18 @@ class ConversationManager():
             # print(f"\nDonald Trump: {msg.content}")
             self.context_manager_2.add_message(msg.content)
             response = self.context_manager_2.generate_response()
-            print(f"Agent 1: {response}")
-            exchange_count += 1
+            print(f"Agent 2: {response}")
+            self.exchange_count += 1
             await ctx.send(self.agent_2.address, Message(content=response))
+
+        # Function to initiate the conversation
+        @self.agent_1.on_interval(period=5.0)
+        async def start_conversation(ctx: Context):
+            if self.exchange_count == 0:
+                initial_message = "What are your thoughts on climate change and its impact on our nation?"
+                print(f"\nInitial question: {initial_message}")
+                self.exchange_count += 1
+                await ctx.send(self.agent_2.address, Message(content=initial_message))
         self.messages = []
 
         self.bureau = Bureau(port=8080, endpoint="http://127.0.0.1:8080/submit")
