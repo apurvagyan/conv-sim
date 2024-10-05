@@ -1,17 +1,55 @@
 from uagents import Agent, Context, Model, Bureau
-import openai
 from openai import OpenAI
+import os
+from dotenv import load_dotenv
 
-# Set your OpenAI API key
-openai_api_key = "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"
+# Load the .env file
+load_dotenv()
+
+# Set OpenAI API key
+openai_api_key = os.getenv('OPENAI_API_KEY')
 client = OpenAI(api_key=openai_api_key)
 
 class Message(Model):
     content: str
 
-# Define the prompts for each agent
-kamala_prompt = "You are Kamala Harris, the Vice President of the United States. You believe in addressing climate change and support aggressive policies to reduce emissions and promote clean energy. Respond to the previous message about climate change."
-trump_prompt = "You are Donald Trump, the former President of the United States. You are skeptical of the severity of climate change and prioritize economic growth over environmental regulations. Respond to the previous message about climate change."
+BASE_PROMPT = """Generate an identity which is rigorously accurate. It should mimic:
+1) The language and tone with which that person speaks
+2) The beliefs and values they hold
+3) The way they would generally behaviorally operate
+4) The real details known regarding their identity, including location, upbringing, culture, and style of conversation
+
+Based on this, create a character with the following details. NOTE, please respond as if you ARE the character
+that you have just created. You should embody their language, tone, beliefs, values, background and information set.
+If they are known to be mean, don't be afraid to be mean. If they are kind, don't be afraid to be kind. Replicate
+EXACTLY how they would actually care to respond in the real world setting. DO NOT allow the conversation to be 
+influenced by the bounds of AI-chat conversation. They should talk like the real people that they are and represent.
+These instructions should be included in the system prompt description which you create for the identity."""
+
+# Global variables
+max_exchanges = 6
+exchange_count = 0
+agent1_prompt = ""
+agent2_prompt = ""
+conversation_topic = ""
+
+def generate_personality_system_prompts(character1, character2):
+    prompt1 = f"{BASE_PROMPT} {character1}"
+    prompt2 = f"{BASE_PROMPT} {character2}"
+    
+    identity1 = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "system", "content": prompt1}],
+        max_tokens=300
+    ).choices[0].message.content
+
+    identity2 = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "system", "content": prompt2}],
+        max_tokens=300
+    ).choices[0].message.content
+
+    return identity1, identity2
 
 def generate_response(prompt, message):
     messages = [
@@ -20,72 +58,82 @@ def generate_response(prompt, message):
     ]
     
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4",
         messages=messages,
         max_tokens=150
     )
     
     return response.choices[0].message.content
 
-# Create Kamala Harris agent
-kamala = Agent(
-    name="kamala_harris",
+# Create agents
+agent1 = Agent(
+    name="agent1",
     port=8000,
-    seed="kamala_secret_phrase",
+    seed="agent1_secret_phrase",
 )
 
-# Create Donald Trump agent
-trump = Agent(
-    name="donald_trump",
+agent2 = Agent(
+    name="agent2",
     port=8001,
-    seed="trump_secret_phrase",
+    seed="agent2_secret_phrase",
 )
 
-# Global variables to control the conversation
-max_exchanges = 6
-exchange_count = 0
-
-# Kamala Harris agent behavior
-@kamala.on_message(model=Message)
-async def kamala_respond(ctx: Context, sender: str, msg: Message):
+# Agent1 behavior
+@agent1.on_message(model=Message)
+async def agent1_respond(ctx: Context, sender: str, msg: Message):
     global exchange_count
     if exchange_count >= max_exchanges:
         print("Conversation has ended.")
         return
 
-    # print(f"\nDonald Trump: {msg.content}")
-    response = generate_response(kamala_prompt, msg.content)
-    print(f"Kamala Harris: {response}")
+    response = generate_response(agent1_prompt, f"{msg.content}\nRespond: {conversation_topic}")
+    print(f"Agent 1: {response}")
     exchange_count += 1
-    await ctx.send(trump.address, Message(content=response))
+    await ctx.send(agent2.address, Message(content=response))
 
-# Donald Trump agent behavior
-@trump.on_message(model=Message)
-async def trump_respond(ctx: Context, sender: str, msg: Message):
+# Agent2 behavior
+@agent2.on_message(model=Message)
+async def agent2_respond(ctx: Context, sender: str, msg: Message):
     global exchange_count
     if exchange_count >= max_exchanges:
         print("Conversation has ended.")
         return
 
-    # print(f"\nKamala Harris: {msg.content}")
-    response = generate_response(trump_prompt, msg.content)
-    print(f"Donald Trump: {response}")
+    response = generate_response(agent2_prompt, f"{msg.content}\nRespond: {conversation_topic}")
+    print(f"Agent 2: {response}")
     exchange_count += 1
-    await ctx.send(kamala.address, Message(content=response))
+    await ctx.send(agent1.address, Message(content=response))
 
 # Function to initiate the conversation
-@kamala.on_interval(period=5.0)
+@agent1.on_interval(period=5.0)
 async def start_conversation(ctx: Context):
     global exchange_count
     if exchange_count == 0:
-        initial_message = "What are your thoughts on climate change and its impact on our nation?"
+        initial_message = f"What are your thoughts on {conversation_topic}?"
         print(f"\nInitial question: {initial_message}")
         exchange_count += 1
-        await ctx.send(trump.address, Message(content=initial_message))
+        await ctx.send(agent2.address, Message(content=initial_message))
 
 if __name__ == "__main__":
-    bureau = Bureau(port=8080, endpoint="http://127.0.0.1:8080/submit")
-    bureau.add(kamala)
-    bureau.add(trump)
-    bureau.run()
+    # Ask user for character descriptions
+    character1 = input("Enter a brief description for the first character (e.g., 'A 45-year-old environmental scientist from California'): ")
+    character2 = input("Enter a brief description for the second character (e.g., 'A 60-year-old oil company executive from Texas'): ")
     
+    # Generate personalized system prompts
+    # global agent1_prompt, agent2_prompt
+    agent1_prompt, agent2_prompt = generate_personality_system_prompts(character1, character2)
+    
+    print("\nGenerated Character Profiles:")
+    print(f"Character 1:\n{agent1_prompt}\n")
+    print(f"Character 2:\n{agent2_prompt}\n")
+    
+    # Ask for the conversation topic
+    conversation_topic = input("Enter the main topic for the conversation: ")
+    
+    print("\nStarting conversation...")
+    
+    # Create and run the bureau
+    bureau = Bureau(port=8080, endpoint="http://127.0.0.1:8080/submit")
+    bureau.add(agent1)
+    bureau.add(agent2)
+    bureau.run()
