@@ -1,6 +1,4 @@
-#!/bin/sh
-'''exec' "/Users/ericli/Desktop/Yale/YHack 2024/conv-sim/conv-env/bin/python3" "$0" "$@"
-' '''
+#!/Users/apurvamishra/Documents/Projects/conv-sim/conv-env/bin/python3.12
 # -*- coding: utf-8 -*-
 import re
 import sys
