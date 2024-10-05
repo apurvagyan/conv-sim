@@ -27,3 +27,6 @@ class ContextManager():
         self.messages.append(OpenAIMessage(content=response.choices[0].message['content'], role=Role.ASSISTANT))
         return response.choices[0].message['content']
     
+    def add_message(self, message):
+        self.messages.append(OpenAIMessage(content=message, role=Role.USER))
+    
