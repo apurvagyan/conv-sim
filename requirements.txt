@@ -3,3 +3,7 @@ uagents
 dialogues
 google
 protobuf
+fastapi
+uvicorn
+pydantic
+python-dotenv
