@@ -1,6 +1,13 @@
 from enum import Enum
 from pydantic import BaseModel
 from typing import Optional
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+load_dotenv()
+openai_api_key = os.getenv('OPEN_API_KEY')
+client = OpenAI(api_key=openai_api_key)
 
 class Role(str, Enum):
     USER = "user"
