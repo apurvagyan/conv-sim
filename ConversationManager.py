@@ -13,6 +13,7 @@ from uagents.query import query
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import base64
 
 # from agent1 import agent_1
 # from agent2 import agent_2
@@ -280,7 +281,10 @@ class ConversationManager():
         plt.savefig('conversation_analysis.png')
         plt.close()
 
-        return analysis
+        # Encode png into base64
+        with open('conversation_analysis.png', 'rb') as img_file:
+            encoded_image = base64.b64encode(img_file.read()).decode('utf-8')
+        return analysis, encoded_image
 
 
     

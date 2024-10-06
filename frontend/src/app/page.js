@@ -34,6 +34,7 @@ export default function Home() {
       setConversation(data.messages);
       setAnalysis(data.analysis);
       localStorage.setItem('analysis', data.analysis);
+      localStorage.setItem('encodedSentimentGraph', data.encodedSentimentGraph);
     } catch {
       setConversation(prev => [...prev, { speaker: 2, content: 'An error occurred.' }]);
     }
@@ -49,6 +50,11 @@ export default function Home() {
       <ParticleBackground />
       <div style={{ maxWidth: '800px' }} className="z-10 bg-black bg-opacity-30 p-8 rounded-lg shadow-lg w-full">
         <h1 className="text-4xl font-bold text-white mb-8 text-center">ConvSim</h1>
+        <div className="text-white mb-6">
+          <h2 className="text-2xl font-semibold mb-4">Instructions</h2>
+          <p className="mb-2">Enter a question in the prompt field that the two people should discuss.</p>
+          <p>In the description fields, provide brief descriptions for each person participating in the conversation.</p>
+        </div>
         <PromptBox onSubmit={handleSubmit} />
         <ConversationOutput conversation={conversation} />
         {responseReceived && (<Link href="/analysis">

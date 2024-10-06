@@ -6,10 +6,13 @@ import ParticlesBackground from '../../components/ParticleBackground'; // Adjust
 
 export default function AnalysisPage() {
     const analysis = localStorage.getItem('analysis').replace(/\n/g, '<br>');
+    const encodedSentimentGraph = localStorage.getItem('encodedSentimentGraph');
     const sanitizedAnalysis = DOMPurify.sanitize(analysis);
 
     const formattedAnalysis = analysis ? analysis.replace(/\n/g, '<br>') : 'No analysis available';
     const [graphData, setGraphData] = useState(null);
+
+    console.log(encodedSentimentGraph);
 
     return (
       <div className="relative min-h-screen flex-col items-center justify-center p-4">
@@ -28,11 +31,11 @@ export default function AnalysisPage() {
             
             {/* Graph Section */}
             <div className="w-1/2 p-10 bg-gray-200 rounded-lg bg-opacity-10">
-              <h2 className="text-xl text-white font-semibold mb-4">Graph:</h2>
+              <h2 className="text-xl text-white font-semibold mb-4">Sentiment and Productivity Analysis</h2>
               {/* Placeholder for your graph */}
               <div className="w-full h-full bg-white rounded-lg flex items-center justify-center">
                 {/* Replace with your graph component */}
-                <p>Graph will be displayed here</p>
+                <img src={`data:image/png;base64,${encodedSentimentGraph}`} alt='Sentiment Graph' />
               </div>
             </div>
           </div>
