@@ -6,4 +6,4 @@ protobuf
 fastapi
 uvicorn
 pydantic
-dotenv
+python-dotenv
