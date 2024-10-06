@@ -9,6 +9,11 @@ from pydantic import BaseModel
 from uagents import Agent, Context, Model, Bureau
 from openai_llm import OpenAI, client
 from uagents.query import query
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
 # from agent1 import agent_1
 # from agent2 import agent_2
 
@@ -200,6 +205,19 @@ class ConversationManager():
         3. General productivity assessment
         4. Any interesting insights or observations
 
+        Provide the tension and productivity scores for each agent as lists:
+        - Agent 1 Tension: [score1, score2, ...]
+        - Agent 1 Productivity: [score1, score2, ...]
+        - Agent 2 Tension: [score1, score2, ...]
+        - Agent 2 Productivity: [score1, score2, ...]
+        
+        These scores should all have values between 1 and 10. They should be honest and harsh.
+        If a message isn't very productive, it should be penalized and given a lower productivity score.
+        If someone's tone is harsher, their tension score should be higher to reflect their tone and tension.
+        I want these numbers to be accurate and exactly descriptive of who someone actually is in the conversation.
+        PLEASE VARY THE NUMBERS so that the plots are exciting and interesting.
+        Agent 1 Tension could be: [3, 5, 5, 7, 8, 9] for example.
+
         Please be succinct but clear, providing a high-impact analysis.
 
         Conversation:
@@ -210,8 +228,57 @@ class ConversationManager():
             model="gpt-4",
             messages=[{"role": "system", "content": "You are an expert conversation analyst."},
                     {"role": "user", "content": analysis_prompt}],
-            max_tokens=300
+            max_tokens=1000
         ).choices[0].message.content
+
+        agent1_tension = []
+        agent1_productivity = []
+        agent2_tension = []
+        agent2_productivity = []
+
+        # Split the analysis into lines
+        lines = analysis.split('\n')
+        
+        for line in lines:
+            if "Agent 1 Tension:" in line:
+                agent1_tension = eval(line.split(":")[1].strip())
+            elif "Agent 1 Productivity:" in line:
+                agent1_productivity = eval(line.split(":")[1].strip())
+            elif "Agent 2 Tension:" in line:
+                agent2_tension = eval(line.split(":")[1].strip())
+            elif "Agent 2 Productivity:" in line:
+                agent2_productivity = eval(line.split(":")[1].strip())
+
+        print("ARRAYS")
+        print(agent1_tension)
+        print(agent2_tension)
+        print(agent1_productivity)
+        print(agent2_productivity)
+
+        # Create plots
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 12))
+
+        # Sentiment plot
+        ax1.plot(agent1_tension, label='Agent 1 Sentiment', marker='o', color='blue', linestyle='-')
+        ax1.plot(agent2_tension, label='Agent 2 Sentiment', marker='o', color='orange', linestyle='-')
+        ax1.set_title('Sentiment Scores')
+        ax1.set_xlabel('Message Number')
+        ax1.set_ylabel('Sentiment Score (1-10)')
+        ax1.legend()
+        ax1.grid(True)
+
+        # Productivity plot
+        ax2.plot(agent1_productivity, label='Agent 1 Productivity', marker='o', color='green', linestyle='-')
+        ax2.plot(agent2_productivity, label='Agent 2 Productivity', marker='o', color='red', linestyle='-')
+        ax2.set_title('Productivity Scores')
+        ax2.set_xlabel('Message Number')
+        ax2.set_ylabel('Productivity Score (1-10)')
+        ax2.legend()
+        ax2.grid(True)
+
+        plt.tight_layout()
+        plt.savefig('conversation_analysis.png')
+        plt.close()
 
         return analysis
     
