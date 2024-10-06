@@ -53,7 +53,7 @@ export default function Home() {
         <div className="text-white mb-6">
           <h2 className="text-2xl font-semibold mb-4">Instructions</h2>
           <p className="mb-2">Enter a question in the prompt field that the two people should discuss.</p>
-          <p>In the description fields, provide brief descriptions for each person participating in the conversation.</p>
+          <p>In the description fields, provide descriptions for each person participating in the conversation.</p>
         </div>
         <PromptBox onSubmit={handleSubmit} />
         <ConversationOutput conversation={conversation} />

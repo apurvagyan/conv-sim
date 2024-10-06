@@ -15,9 +15,6 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import base64
 
-# from agent1 import agent_1
-# from agent2 import agent_2
-
 class ConversationMessage(BaseModel):
     content: str
     speaker: int
@@ -26,21 +23,6 @@ class ConversationMessage(BaseModel):
 class Message(Model):
     content: str
 
-# Define dialogue messages; each transition needs a separate message
-class InitiateChitChatDialogue(Model):
-    pass
- 
-class AcceptChitChatDialogue(Model):
-    pass
- 
-class ChitChatDialogueMessage(Model):
-    text: str
- 
-class ConcludeChitChatDialogue(Model):
-    pass
- 
-class RejectChitChatDialogue(Model):
-    pass
 
 # Logic to pass messages to each context manager and get them to generate their response, then print the response
 class ConversationManager():
@@ -63,7 +45,6 @@ class ConversationManager():
             seed="agent_1",
             loop=loop,
         )
-        # self.agent_1 = agent_1
 
         self.agent_2 = Agent(
             name=agent_2_desc,
@@ -72,7 +53,6 @@ class ConversationManager():
             endpoint=["http://127.0.0.1:8001/submit"],
             loop=loop,
         )
-        # self.agent_2 = agent_2
 
         prompt_1, prompt_2, name1, name2 = self.generate_personality_system_prompts()
         print(f"Prompt 1: {prompt_1}")
@@ -87,10 +67,8 @@ class ConversationManager():
             if self.exchange_count >= max_exchanges:
                 print("Conversation has ended.")
                 self.conversation_ended.set()  # Set the event
-                # await ctx.send(self.agent_2.address, ConcludeChitChatDialogue())
                 return
 
-            # print(f"\nDonald Trump: {msg.content}")
             self.context_manager_1.add_message(msg.content)
             response = self.context_manager_1.generate_response()
             print(f"{self.agent_1.name}: {response}")
@@ -103,10 +81,8 @@ class ConversationManager():
             if self.exchange_count >= self.max_exchanges:
                 print("Conversation has ended.")
                 self.conversation_ended.set()  # Set the event
-                # await ctx.send(self.agent_1.address, ConcludeChitChatDialogue())
                 return
 
-            # print(f"\nDonald Trump: {msg.content}")
             self.context_manager_2.add_message(msg.content)
             response = self.context_manager_2.generate_response()
             print(f"{self.agent_2.name}: {response}")
@@ -162,18 +138,8 @@ class ConversationManager():
         pass
     # Function to run the bureau
     def run_bureau(self, bureau: Bureau):
-        # try:
-        #     # Try to get the current running event loop
-        #     loop = asyncio.get_running_loop()
-        # except RuntimeError:
-        #     # If no loop is running, create a new one
-        #     asyncio.run(bureau.run())  # Use asyncio.run when no loop exists
-        #     return
-
-        # # If a loop already exists, use it
-        # loop.run_until_complete(bureau.run())
         bureau.run()
-        # asyncio.create_task(bureau.run_async())
+
 
     # Function to monitor conversation and stop bureau
     def monitor_conversation(self, bureau_thread):
