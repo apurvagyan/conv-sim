@@ -165,7 +165,7 @@ class ConversationManager():
         raise IOError("No free ports")
     
     def analyze_conversation(self):
-        conversation_text = "\n".join([message.content for message in self.messages])
+        conversation_text = "\n".join([f"{message.name} ({'Agent 1' if message.speaker == 1 else 'Agent 2'}): {message.content}" for message in self.messages])
         analysis_prompt = f"""Analyze the following conversation and provide:
         1. Key takeaways
         2. Major points discussed
@@ -184,6 +184,8 @@ class ConversationManager():
         I want these numbers to be accurate and exactly descriptive of who someone actually is in the conversation.
         PLEASE VARY THE NUMBERS so that the plots are exciting and interesting.
         Agent 1 Tension could be: [3, 5, 5, 7, 8, 9] for example.
+        DO NOT add agent names before the tension and productivity score lists. Follow the format exactly.
+        DO NOT add a period after the the last number in the list.
 
         Please be succinct but clear, providing a high-impact analysis.
 

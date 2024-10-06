@@ -18,7 +18,6 @@ class UserPromptResponse(BaseModel):
     messages: list[str]
 
 app = FastAPI()
-# app.mount("/static", StaticFiles(directory="static"), name="static")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
