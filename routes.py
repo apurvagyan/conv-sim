@@ -27,5 +27,7 @@ def process_user_prompt(user_prompt_request: UserPromptRequest):
     user_prompt = user_prompt_request.prompt
     conversation_manager = ConversationManager(user_input=user_prompt, agent_1_desc=user_prompt_request.agent_1_desc, agent_2_desc=user_prompt_request.agent_2_desc, max_exchanges=10)
     analysis = conversation_manager.analyze_conversation()
+    print("ANALYSIS \n")
+    print(analysis)
     print("Conversation analyzed, returning to FE")
     return {"messages": conversation_manager.messages, "analysis": analysis}

@@ -1,7 +1,7 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'Conversation Simulator',
+  title: 'Sim Co. AI',
   description: 'A conversation simulation app',
 }
 

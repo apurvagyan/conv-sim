@@ -2,3 +2,4 @@ conv-env/
 /bin
 /lib
 __pycache__/
+*.png

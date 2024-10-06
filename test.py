@@ -146,7 +146,8 @@ def analyze_conversation():
     3. General productivity assessment
     4. Any interesting insights or observations
 
-    Please be succinct but clear, providing a high-impact analysis.
+    Please be succinct but clear, providing a high-impact analysis. Don't be afraid to be honest.
+    If someone was more immature or mean or unproductive, note that.
 
     Conversation:
     {conversation_text}

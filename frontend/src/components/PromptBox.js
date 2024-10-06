@@ -6,13 +6,18 @@ const PromptBox = ({ onSubmit }) => {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (prompt.trim() && person1Desc.trim() && person2Desc.trim()) {
-      onSubmit({ prompt, person1Desc, person2Desc });
-      setPrompt(''); // Clear the input field after submission
-      setPerson1Desc('');
-      setPerson2Desc('');
+      setLoading(true); // Set loading to true when submission starts
+      try {
+        await onSubmit({ prompt, person1Desc, person2Desc });
+      } finally {
+        setLoading(false); // Reset loading to false after submission
+        setPrompt(''); // Clear the input field after submission
+        setPerson1Desc('');
+        setPerson2Desc('');
+      }
     }
   };
 
@@ -41,10 +46,13 @@ const PromptBox = ({ onSubmit }) => {
       />
       <button
         type="submit"
-        className="mt-2 w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+        className="mt-2 w-full px-4 py-2 bg-slate-700 text-white rounded hover:bg-blue-700 transition-colors flex justify-center items-center"
       >
-        {loading ? <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-white"></div>  // Spinner
-        : 'Submit'}
+        {loading ? (
+          <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-white"></div> // Spinner
+        ) : (
+          'Submit'
+        )}
       </button>
     </form>
   );
