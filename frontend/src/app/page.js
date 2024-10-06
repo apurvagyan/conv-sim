@@ -1,14 +1,17 @@
 'use client';
 
+import ParticleBackground from '@/components/ParticleBackground';
+import Link from 'next/link';
 import { useCallback, useState } from 'react';
-import Particles from "react-tsparticles";
 import { loadFull } from "tsparticles";
 import ConversationOutput from '../components/ConversationOutput';
 import PromptBox from '../components/PromptBox';
 
+
 export default function Home() {
   const [conversation, setConversation] = useState([]);
   const [analysis, setAnalysis] = useState('');
+  const [responseReceived, setResponseReceived] = useState(false);
 
   const particlesInit = useCallback(async engine => {
     await loadFull(engine);
@@ -26,9 +29,11 @@ export default function Home() {
         body: JSON.stringify({ prompt: prompt, agent_1_desc: person1Desc, agent_2_desc: person2Desc }),
       });
   
+      setResponseReceived(true);
       const data = await response.json();
-      setConversation([...conversation, ...data.messages]);
+      setConversation(data.messages);
       setAnalysis(data.analysis);
+      localStorage.setItem('analysis', data.analysis);
     } catch {
       setConversation(prev => [...prev, { speaker: 2, content: 'An error occurred.' }]);
     }
@@ -41,83 +46,16 @@ export default function Home() {
   return (
     <div className="relative min-h-screen flex items-center justify-center p-4">
       <div className="stars"></div>
-      <Particles
-        id="tsparticles"
-        init={particlesInit}
-        options={{
-          background: {
-            color: {
-              value: "transparent",
-            },
-          },
-          fpsLimit: 60,
-          interactivity: {
-            events: {
-              onClick: {
-                enable: true,
-                mode: "push",
-              },
-              onHover: {
-                enable: true,
-                mode: "repulse",
-              },
-              resize: true,
-            },
-            modes: {
-              push: {
-                quantity: 4,
-              },
-              repulse: {
-                distance: 200,
-                duration: 0.4,
-              },
-            },
-          },
-          particles: {
-            color: {
-              value: "#ffffff",
-            },
-            links: {
-              color: "#ffffff",
-              distance: 150,
-              enable: true,
-              opacity: 0.5,
-              width: 1,
-            },
-            move: {
-              direction: "none",
-              enable: true,
-              outModes: {
-                default: "bounce",
-              },
-              random: false,
-              speed: 2,
-              straight: false,
-            },
-            number: {
-              density: {
-                enable: true,
-                area: 800,
-              },
-              value: 80,
-            },
-            opacity: {
-              value: 0.5,
-            },
-            shape: {
-              type: "circle",
-            },
-            size: {
-              value: { min: 1, max: 5 },
-            },
-          },
-          detectRetina: true,
-        }}
-      />
+      <ParticleBackground />
       <div className="z-10 bg-black bg-opacity-30 p-8 rounded-lg shadow-lg max-w-md w-full">
         <h1 className="text-4xl font-bold text-white mb-8 text-center">Conversation Simulator</h1>
         <PromptBox onSubmit={handleSubmit} />
         <ConversationOutput conversation={conversation} />
+        {responseReceived && (<Link href="/analysis">
+          <button className="mt-2 w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+            Analysis
+          </button>
+        </Link>)}
       </div>
     </div>
   );
