@@ -1,3 +1,4 @@
 conv-env/
 /bin
 /lib
+__pycache__/
