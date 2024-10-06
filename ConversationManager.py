@@ -212,7 +212,10 @@ class ConversationManager():
             max_tokens=300
         ).choices[0].message.content
 
+        print(analysis)
         return analysis
+
+
     
     def agent_1_respond(self):
         if self.exchange_count >= self.max_exchanges:
