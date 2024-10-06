@@ -114,7 +114,7 @@ export default function Home() {
           detectRetina: true,
         }}
       />
-      <div className="z-10 bg-black bg-opacity-30 p-8 rounded-lg shadow-lg max-w-md w-full">
+      <div style={{ maxWidth: '800px' }} className="z-10 bg-black bg-opacity-30 p-8 rounded-lg shadow-lg w-full">
         <h1 className="text-4xl font-bold text-white mb-8 text-center">Conversation Simulator</h1>
         <PromptBox onSubmit={handleSubmit} />
         <ConversationOutput conversation={conversation} />

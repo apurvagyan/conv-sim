@@ -267,6 +267,7 @@ class ConversationManager():
         # system_prompts = []
         # system_prompts.append(KAMALA_SAMPLE_PROMPT)
         # system_prompts.append(TRUMP_SAMPLE_PROMPT)
+        
         prompt1 = f"{SYSTEM_PROMPT_GEN_PROMPT} {self.agent_1_desc}"
         prompt2 = f"{SYSTEM_PROMPT_GEN_PROMPT} {self.agent_2_desc}"
         
