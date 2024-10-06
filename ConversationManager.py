@@ -12,11 +12,10 @@ from uagents.query import query
 # from agent1 import agent_1
 # from agent2 import agent_2
 
-
-
 class ConversationMessage(BaseModel):
     content: str
     speaker: int
+    name: str
 
 class Message(Model):
     content: str
@@ -69,9 +68,11 @@ class ConversationManager():
         )
         # self.agent_2 = agent_2
 
-        prompt_1, prompt_2 = self.generate_personality_system_prompts()
+        prompt_1, prompt_2, name1, name2 = self.generate_personality_system_prompts()
         print(f"Prompt 1: {prompt_1}")
         print(f"Prompt 2: {prompt_2}")
+        self.name1 = name1
+        self.name2 = name2
         self.context_manager_1 = ContextManager(prompt_1) # pass in the prompt here?
         self.context_manager_2 = ContextManager(prompt_2) # pass in the prompt here?
 
@@ -87,7 +88,7 @@ class ConversationManager():
             self.context_manager_1.add_message(msg.content)
             response = self.context_manager_1.generate_response()
             print(f"{self.agent_1.name}: {response}")
-            self.messages.append(ConversationMessage(content=response, speaker=1))
+            self.messages.append(ConversationMessage(content=response, speaker=1, name=name1))
             self.exchange_count += 1
             await ctx.send(self.agent_2.address, Message(content=response))
 
@@ -103,7 +104,7 @@ class ConversationManager():
             self.context_manager_2.add_message(msg.content)
             response = self.context_manager_2.generate_response()
             print(f"{self.agent_2.name}: {response}")
-            self.messages.append(ConversationMessage(content=response, speaker=2))
+            self.messages.append(ConversationMessage(content=response, speaker=2, name=name2))
             self.exchange_count += 1
             await ctx.send(self.agent_1.address, Message(content=response))
 
@@ -262,12 +263,18 @@ class ConversationManager():
         
         return self.messages
     
+    def extract_character_name(self, identity_text):
+        for line in identity_text.splitlines():
+            if line.startswith("--- Character Name:"):
+                return line.split(":")[1].strip()
+        return "Unknown"
+    
     def generate_personality_system_prompts(self):
         # generate system prompts for each personality
         # system_prompts = []
         # system_prompts.append(KAMALA_SAMPLE_PROMPT)
         # system_prompts.append(TRUMP_SAMPLE_PROMPT)
-        
+
         prompt1 = f"{SYSTEM_PROMPT_GEN_PROMPT} {self.agent_1_desc}"
         prompt2 = f"{SYSTEM_PROMPT_GEN_PROMPT} {self.agent_2_desc}"
         
@@ -283,7 +290,14 @@ class ConversationManager():
             max_tokens=300
         ).choices[0].message.content
 
-        return identity1, identity2
+        # Extract character names
+        name1 = self.extract_character_name(identity1)
+        name2 = self.extract_character_name(identity2)
+
+        # print("NAMES::::")
+        # print(name1, name2)
+
+        return identity1, identity2, name1, name2
     
     def initialize_chitchat_handlers(self):
         @self.chitchat_dialogue_1.on_initiate_session(InitiateChitChatDialogue)
