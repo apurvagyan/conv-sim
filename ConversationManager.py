@@ -9,14 +9,19 @@ from pydantic import BaseModel
 from uagents import Agent, Context, Model, Bureau
 from openai_llm import OpenAI, client
 from uagents.query import query
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import base64
+
 # from agent1 import agent_1
 # from agent2 import agent_2
-
-
 
 class ConversationMessage(BaseModel):
     content: str
     speaker: int
+    name: str
 
 class Message(Model):
     content: str
@@ -69,9 +74,11 @@ class ConversationManager():
         )
         # self.agent_2 = agent_2
 
-        prompt_1, prompt_2 = self.generate_personality_system_prompts()
+        prompt_1, prompt_2, name1, name2 = self.generate_personality_system_prompts()
         print(f"Prompt 1: {prompt_1}")
         print(f"Prompt 2: {prompt_2}")
+        self.name1 = name1
+        self.name2 = name2
         self.context_manager_1 = ContextManager(prompt_1) # pass in the prompt here?
         self.context_manager_2 = ContextManager(prompt_2) # pass in the prompt here?
 
@@ -87,7 +94,7 @@ class ConversationManager():
             self.context_manager_1.add_message(msg.content)
             response = self.context_manager_1.generate_response()
             print(f"{self.agent_1.name}: {response}")
-            self.messages.append(ConversationMessage(content=response, speaker=1))
+            self.messages.append(ConversationMessage(content=response, speaker=1, name=name1))
             self.exchange_count += 1
             await ctx.send(self.agent_2.address, Message(content=response))
 
@@ -103,7 +110,7 @@ class ConversationManager():
             self.context_manager_2.add_message(msg.content)
             response = self.context_manager_2.generate_response()
             print(f"{self.agent_2.name}: {response}")
-            self.messages.append(ConversationMessage(content=response, speaker=2))
+            self.messages.append(ConversationMessage(content=response, speaker=2, name=name2))
             self.exchange_count += 1
             await ctx.send(self.agent_1.address, Message(content=response))
 
@@ -199,6 +206,19 @@ class ConversationManager():
         3. General productivity assessment
         4. Any interesting insights or observations
 
+        Provide the tension and productivity scores for each agent as lists:
+        - Agent 1 Tension: [score1, score2, ...]
+        - Agent 1 Productivity: [score1, score2, ...]
+        - Agent 2 Tension: [score1, score2, ...]
+        - Agent 2 Productivity: [score1, score2, ...]
+        
+        These scores should all have values between 1 and 10. They should be honest and harsh.
+        If a message isn't very productive, it should be penalized and given a lower productivity score.
+        If someone's tone is harsher, their tension score should be higher to reflect their tone and tension.
+        I want these numbers to be accurate and exactly descriptive of who someone actually is in the conversation.
+        PLEASE VARY THE NUMBERS so that the plots are exciting and interesting.
+        Agent 1 Tension could be: [3, 5, 5, 7, 8, 9] for example.
+
         Please be succinct but clear, providing a high-impact analysis.
 
         Conversation:
@@ -209,10 +229,64 @@ class ConversationManager():
             model="gpt-4",
             messages=[{"role": "system", "content": "You are an expert conversation analyst."},
                     {"role": "user", "content": analysis_prompt}],
-            max_tokens=300
+            max_tokens=1000
         ).choices[0].message.content
 
-        return analysis
+        agent1_tension = []
+        agent1_productivity = []
+        agent2_tension = []
+        agent2_productivity = []
+
+        # Split the analysis into lines
+        lines = analysis.split('\n')
+        
+        for line in lines:
+            if "Agent 1 Tension:" in line:
+                agent1_tension = eval(line.split(":")[1].strip())
+            elif "Agent 1 Productivity:" in line:
+                agent1_productivity = eval(line.split(":")[1].strip())
+            elif "Agent 2 Tension:" in line:
+                agent2_tension = eval(line.split(":")[1].strip())
+            elif "Agent 2 Productivity:" in line:
+                agent2_productivity = eval(line.split(":")[1].strip())
+
+        print("ARRAYS")
+        print(agent1_tension)
+        print(agent2_tension)
+        print(agent1_productivity)
+        print(agent2_productivity)
+
+        # Create plots
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 12))
+
+        # Sentiment plot
+        ax1.plot(agent1_tension, label='Agent 1 Sentiment', marker='o', color='blue', linestyle='-')
+        ax1.plot(agent2_tension, label='Agent 2 Sentiment', marker='o', color='orange', linestyle='-')
+        ax1.set_title('Sentiment Scores')
+        ax1.set_xlabel('Message Number')
+        ax1.set_ylabel('Sentiment Score (1-10)')
+        ax1.legend()
+        ax1.grid(True)
+
+        # Productivity plot
+        ax2.plot(agent1_productivity, label='Agent 1 Productivity', marker='o', color='green', linestyle='-')
+        ax2.plot(agent2_productivity, label='Agent 2 Productivity', marker='o', color='red', linestyle='-')
+        ax2.set_title('Productivity Scores')
+        ax2.set_xlabel('Message Number')
+        ax2.set_ylabel('Productivity Score (1-10)')
+        ax2.legend()
+        ax2.grid(True)
+
+        plt.tight_layout()
+        plt.savefig('conversation_analysis.png')
+        plt.close()
+
+        # Encode png into base64
+        with open('conversation_analysis.png', 'rb') as img_file:
+            encoded_image = base64.b64encode(img_file.read()).decode('utf-8')
+        return analysis, encoded_image
+
+
     
     def agent_1_respond(self):
         if self.exchange_count >= self.max_exchanges:
@@ -262,11 +336,18 @@ class ConversationManager():
         
         return self.messages
     
+    def extract_character_name(self, identity_text):
+        for line in identity_text.splitlines():
+            if line.startswith("--- Character Name:"):
+                return line.split(":")[1].strip()
+        return "Unknown"
+    
     def generate_personality_system_prompts(self):
         # generate system prompts for each personality
         # system_prompts = []
         # system_prompts.append(KAMALA_SAMPLE_PROMPT)
         # system_prompts.append(TRUMP_SAMPLE_PROMPT)
+
         prompt1 = f"{SYSTEM_PROMPT_GEN_PROMPT} {self.agent_1_desc}"
         prompt2 = f"{SYSTEM_PROMPT_GEN_PROMPT} {self.agent_2_desc}"
         
@@ -282,7 +363,14 @@ class ConversationManager():
             max_tokens=300
         ).choices[0].message.content
 
-        return identity1, identity2
+        # Extract character names
+        name1 = self.extract_character_name(identity1)
+        name2 = self.extract_character_name(identity2)
+
+        # print("NAMES::::")
+        # print(name1, name2)
+
+        return identity1, identity2, name1, name2
     
     def initialize_chitchat_handlers(self):
         @self.chitchat_dialogue_1.on_initiate_session(InitiateChitChatDialogue)
