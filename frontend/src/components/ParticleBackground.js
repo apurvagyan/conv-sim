@@ -1,10 +1,10 @@
-import Particles from "@tsparticles/react";
-import { loadSlim } from "tsparticles-slim";
 import { useCallback } from "react";
+import Particles from "react-tsparticles";
+import { loadFull } from "tsparticles";
 
 const ParticleBackground = () => {
   const particlesInit = useCallback(async engine => {
-    await loadSlim(engine);
+    await loadFull(engine);
   }, []);
 
   return (
@@ -14,15 +14,19 @@ const ParticleBackground = () => {
       options={{
         background: {
           color: {
-            value: "#4a0e4e",
+            value: "transparent",
           },
         },
-        fpsLimit: 120,
+        fpsLimit: 60,
         interactivity: {
           events: {
             onClick: {
               enable: true,
               mode: "push",
+            },
+            onHover: {
+              enable: true,
+              mode: "repulse",
             },
             onHover: {
               enable: true,
