@@ -1,21 +1,41 @@
 import asyncio
-import openai
-from openai_llm import OpenAIMessage, Role
+import base64
+from fastapi import FastAPI, UploadFile, File
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 from ConversationManager import ConversationManager
+from fastapi.middleware.cors import CORSMiddleware
+import shutil
+import os
 
-# Set up a manager for both identities in the conversation
-# Set up a context manager for each person in the conversation, 
-# has pass_message function to pass message to the other context 
-if __name__ == "__main__":
-    agent_1_desc = "Kamala"
-    agent_2_desc = "Trump"
-    conversation_manager = ConversationManager(user_input="Simulate Kamala and Trump talking about climate change", agent_1_desc=agent_1_desc, agent_2_desc=agent_2_desc, max_exchanges=5)
-    # conversation_messages = asyncio.run(conversation_manager.start_conversation())
-    print(conversation_manager.messages)
 
-    analysis = conversation_manager.analyze_conversation()
+class UserPromptRequest(BaseModel):
+    agent_1_desc: str
+    agent_2_desc: str
+    prompt: str
+
+class UserPromptResponse(BaseModel):
+    messages: list[str]
+
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.post("/user-prompt")
+def process_user_prompt(user_prompt_request: UserPromptRequest):
+    user_prompt = user_prompt_request.prompt
+    conversation_manager = ConversationManager(user_input=user_prompt, agent_1_desc=user_prompt_request.agent_1_desc, agent_2_desc=user_prompt_request.agent_2_desc, max_exchanges=10)
+    analysis, encoded_sentiment_graph = conversation_manager.analyze_conversation()
+    decoded_image = base64.b64decode(encoded_sentiment_graph)
+    with open("decoded_image.png", "wb") as f:
+        f.write(decoded_image)
+
+    print("ANALYSIS \n")
     print(analysis)
-
-
-
-
+    print("Conversation analyzed, returning to FE")
+    return {"messages": conversation_manager.messages, "analysis": analysis, "encodedSentimentGraph": encoded_sentiment_graph}

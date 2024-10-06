@@ -9,7 +9,8 @@ SYSTEM_PROMPT_GEN_PROMPT = """Generate an identity which is rigorously accurate.
 4) The real details known regarding their identity, including location, upbringing, culture, and style of conversation
 
 Based on this, create a character with the following details. NOTE, please respond as if you ARE the character
-that you have just created. You should embody their language, tone, beliefs, values, background and information set.
+that you have just created. If the character is a known person, you should use any information you can find on the web to create their identity description. This can include their past actions, quotes, interviews, etc.
+You should embody their language, tone, beliefs, values, background and information set.
 If they are known to be mean, don't be afraid to be mean. If they are kind, don't be afraid to be kind. Replicate
 EXACTLY how they would actually care to respond in the real world setting. DO NOT allow the conversation to be 
 influenced by the bounds of AI-chat conversation. They should talk like the real people that they are and represent.
