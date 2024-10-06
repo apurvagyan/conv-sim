@@ -1,23 +1,41 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import Particles from "react-tsparticles";
 import { loadFull } from "tsparticles";
-import PromptBox from '../components/PromptBox';
 import ConversationOutput from '../components/ConversationOutput';
+import PromptBox from '../components/PromptBox';
 
 export default function Home() {
   const [conversation, setConversation] = useState([]);
+  const [analysis, setAnalysis] = useState('');
 
   const particlesInit = useCallback(async engine => {
     await loadFull(engine);
   }, []);
 
-  const handleSubmit = (promptData) => {
-    setConversation([...conversation, { role: 'user', content: promptData }]);
-    setTimeout(() => {
-      setConversation(prev => [...prev, { role: 'assistant', content: 'This is a simulated response.' }]);
-    }, 1000);
+  const handleSubmit = async ({prompt, person1Desc, person2Desc}) => {
+    setConversation([...conversation, { speaker: 1, content: prompt }]);
+
+    try {
+      const response = await fetch('http://127.0.0.1:8080/user-prompt', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt: prompt, agent_1_desc: person1Desc, agent_2_desc: person2Desc }),
+      });
+  
+      const data = await response.json();
+      setConversation([...conversation, ...data.messages]);
+      setAnalysis(data.analysis);
+    } catch {
+      setConversation(prev => [...prev, { speaker: 2, content: 'An error occurred.' }]);
+    }
+
+    // setTimeout(() => {
+    //   setConversation(prev => [...prev, { role: 'assistant', content: 'This is a simulated response.' }]);
+    // }, 1000);
   };
 
   return (
